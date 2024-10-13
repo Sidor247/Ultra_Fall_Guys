@@ -30,12 +30,15 @@ public:
 
 	UPROPERTY(EditAnywhere) FVector Activation_Box_Position = FVector::ZeroVector;
 
+	UPROPERTY(EditAnywhere) int Damage = 15;
+
 	UPROPERTY(EditAnywhere) USceneComponent* Default_Scene_Root;
 
 protected:
 	virtual void BeginPlay() override;
 	virtual void OnConstruction(const FTransform& Transform) override;
 	virtual void Tick(float DeltaSeconds) override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 private:
 	UFUNCTION() void On_Platform_Enter(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 BodyIndex, bool bSweepResult, const FHitResult& HitResult);
@@ -44,7 +47,8 @@ private:
 
 	enum State { Ready, Preparing, Damaging, Reloading } Current_State;
 	void Handle_New_State(State New_State);
-
+	
+	FTimerHandle Timer_Handle;
 	AUltra_Fall_GuysCharacter* Standing_Character = nullptr;
 	bool Already_Damaged = false;
 };

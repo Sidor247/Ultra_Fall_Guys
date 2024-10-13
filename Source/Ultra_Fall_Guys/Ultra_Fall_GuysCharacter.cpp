@@ -10,6 +10,8 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
+#include "Kismet/GameplayStatics.h"
+#include "Blueprint/WidgetBlueprintLibrary.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -56,8 +58,54 @@ AUltra_Fall_GuysCharacter::AUltra_Fall_GuysCharacter()
 
 void AUltra_Fall_GuysCharacter::BeginPlay()
 {
-	// Call the base class  
 	Super::BeginPlay();
+	if (HUD_Class)
+		if (auto hud = CreateWidget<UHUD_Base>(GetWorld(), HUD_Class))
+		{
+			HUD = hud;
+			HUD->AddToViewport();
+			HUD->Set_Health(Health);
+		}
+}
+
+void AUltra_Fall_GuysCharacter::FellOutOfWorld(const UDamageType& dmgType)
+{
+	Handle_Death();
+	Super::FellOutOfWorld(dmgType);
+}
+
+void AUltra_Fall_GuysCharacter::Handle_Death()
+{
+	GetMesh()->SetSimulatePhysics(true);
+	
+	if (HUD)
+		HUD->RemoveFromViewport();
+	if (Total_Screen_Class)
+		if (auto total_screen = CreateWidget<UTotal_Screen_Base>(GetWorld(), Total_Screen_Class))
+		{
+			Total_Screen = total_screen;
+			Total_Screen->AddToViewport();
+			Total_Screen->Set_Result(false);
+			APlayerController* controller = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+			UWidgetBlueprintLibrary::SetInputMode_UIOnlyEx(controller, Total_Screen, EMouseLockMode::LockOnCapture, true);
+			controller->SetShowMouseCursor(true);
+		}
+}
+
+void AUltra_Fall_GuysCharacter::Handle_Finish()
+{
+	if (HUD)
+		HUD->RemoveFromViewport();
+	if (Total_Screen_Class)
+		if (auto total_screen = CreateWidget<UTotal_Screen_Base>(GetWorld(), Total_Screen_Class))
+		{
+			Total_Screen = total_screen;
+			Total_Screen->AddToViewport();
+			Total_Screen->Set_Result(true, Play_Time_Seconds);
+			APlayerController* controller = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+			UWidgetBlueprintLibrary::SetInputMode_UIOnlyEx(controller, Total_Screen, EMouseLockMode::LockOnCapture, true);
+			controller->SetShowMouseCursor(true);
+		}
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -91,6 +139,17 @@ void AUltra_Fall_GuysCharacter::SetupPlayerInputComponent(UInputComponent* Playe
 	{
 		UE_LOG(LogTemplateCharacter, Error, TEXT("'%s' Failed to find an Enhanced Input component! This template is built to use the Enhanced Input system. If you intend to use the legacy system, then you will need to update this C++ file."), *GetNameSafe(this));
 	}
+}
+
+void AUltra_Fall_GuysCharacter::Handle_Damage(int Damage)
+{
+	Health -= Damage;
+	if (Health < 0)
+		Health = 0;
+	if (HUD)
+		HUD->Set_Health(Health);
+	if (Health == 0)
+		Handle_Death();
 }
 
 void AUltra_Fall_GuysCharacter::Move(const FInputActionValue& Value)
@@ -127,4 +186,11 @@ void AUltra_Fall_GuysCharacter::Look(const FInputActionValue& Value)
 		AddControllerYawInput(LookAxisVector.X);
 		AddControllerPitchInput(LookAxisVector.Y);
 	}
+}
+
+void AUltra_Fall_GuysCharacter::Tick(float DeltaSeconds)
+{
+	Play_Time_Seconds += DeltaSeconds;
+	if (HUD)
+		HUD->Set_Time(Play_Time_Seconds);
 }

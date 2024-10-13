@@ -32,9 +32,14 @@ void ATimerTrap::OnConstruction(const FTransform& Transform)
 void ATimerTrap::Tick(float DeltaSeconds)
 {
 	if (Current_State == Damaging && Standing_Character && !Already_Damaged) {
-		UE_LOG(LogTemp, Warning, TEXT("Ouch"));
+		Standing_Character->Handle_Damage(Damage);
 		Already_Damaged = true;
 	}
+}
+
+void ATimerTrap::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+ 	GetWorldTimerManager().ClearTimer(Timer_Handle);
 }
 
 void ATimerTrap::On_Platform_Enter(UPrimitiveComponent*, AActor* OtherActor, UPrimitiveComponent*, int32, bool, const FHitResult&)
@@ -56,8 +61,6 @@ void ATimerTrap::On_Platform_Leave(UPrimitiveComponent*, AActor* OtherActor, UPr
 
 void ATimerTrap::Handle_New_State(State New_State)
 {
-	FTimerHandle timer_handle;
-
 	switch (New_State) {
 	case Ready:
 		Already_Damaged = false;
@@ -71,7 +74,7 @@ void ATimerTrap::Handle_New_State(State New_State)
 		if (SM_Component)
 			SM_Component->SetMaterial(0, Preparing_Material);
 		GetWorld()->GetTimerManager().SetTimer(
-			timer_handle,
+			Timer_Handle,
 			[this]() { Handle_New_State(Damaging); },
 			Preparing_Time,
 			false
@@ -82,7 +85,7 @@ void ATimerTrap::Handle_New_State(State New_State)
 		if (SM_Component)
 			SM_Component->SetMaterial(0, Damaging_Material);
 		GetWorld()->GetTimerManager().SetTimer(
-			timer_handle,
+			Timer_Handle,
 			[this]() { Handle_New_State(Reloading); },
 			Damaging_Time,
 			false
@@ -93,7 +96,7 @@ void ATimerTrap::Handle_New_State(State New_State)
 		if (SM_Component)
 			SM_Component->SetMaterial(0, Reloading_Material);
 		GetWorld()->GetTimerManager().SetTimer(
-			timer_handle,
+			Timer_Handle,
 			[this]() { Handle_New_State(Ready); },
 			Reloading_Time,
 			false
