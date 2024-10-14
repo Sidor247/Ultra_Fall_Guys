@@ -55,6 +55,7 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "UI") TSubclassOf<UHUD_Base> HUD_Class;
 	UPROPERTY(EditAnywhere, Category = "UI") TSubclassOf<UTotal_Screen_Base> Total_Screen_Class;
+	UPROPERTY(EditAnywhere) int Health = 100;
 
 	void Handle_Damage(int Damage);
 	void Handle_Finish();
@@ -80,7 +81,6 @@ protected:
 private:
 	UPROPERTY() UHUD_Base* HUD = nullptr;
 	UPROPERTY() UTotal_Screen_Base* Total_Screen = nullptr;
-	int Health = 10;
 	float Play_Time_Seconds = 0.0f;
 
 	void Handle_Death();
